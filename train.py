@@ -24,7 +24,7 @@ m = torch.compile(m)
 end_time = time.time()
 print(f"Time to load model: {end_time - start_time} seconds")
 
-max_lr = 3e-4
+max_lr = 6e-4
 min_lr = max_lr * 0.1
 warmup_steps=100
 def get_lr(step):
@@ -37,7 +37,7 @@ def get_lr(step):
     coeff = 0.5 * (1.0 + math.cos(math.pi * decay_ratio))
     return min_lr + coeff * (max_lr - min_lr)
 
-optimizer = m.configure_optimizers(weight_decay=0.1, learning_rate=3e-4, betas=(0.9, 0.95), eps=1e-8)
+optimizer = m.configure_optimizers(weight_decay=0.1, learning_rate=max_lr, betas=(0.9, 0.95), eps=1e-8)
 
 dataloader = DataLoader(B=2, T=1024)
 start_time = time.time()

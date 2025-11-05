@@ -78,5 +78,5 @@ class GPT(nn.Module):
             {"params": [p for p in decay_params], "weight_decay": weight_decay},
             {"params": [p for p in nodecay_params], "weight_decay": 0.0}
         ]
-        optimizer = torch.optim.AdamW(optim_groups, lr=learning_rate, betas=betas, eps=eps)
+        optimizer = torch.optim.AdamW(optim_groups, lr=learning_rate, betas=betas, eps=eps, fused=False)
         return optimizer

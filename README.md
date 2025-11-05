@@ -16,3 +16,8 @@ For 5 epochs,
 2. with torch.autocast to bfloat16 and float32 matmul precision to high - Time to train: 125.25839257240295 seconds
 3. With torch.compile and Flash Attention - Time to train: 69.03489518165588 seconds
 4. Change Vocab Size to a nice number + (3) - Time to train: 65.71632099151611 seconds
+
+
+After Adding LR Schedulers, Weight Decay and Gradient Norm Clipping, Training for 5 epochs
+1. Without Fused AdamW - Time to train: 62.56659150123596 seconds
+2. With Fused AdamW - Time to train: 57.591166973114014 seconds
