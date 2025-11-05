@@ -80,3 +80,11 @@ class GPT(nn.Module):
         ]
         optimizer = torch.optim.AdamW(optim_groups, lr=learning_rate, betas=betas, eps=eps, fused=False)
         return optimizer
+    
+    def load_state_dict(self, state_dict, optimizer_state_dict):
+        cur_state_dict = self.state_dict() 
+        for key in cur_state_dict.keys():
+                cur_state_dict[key].data.copy_(state_dict['_orig_mod.'+key].data)
+        optimizer = self.configure_optimizers(weight_decay=0.1, learning_rate=6e-4, betas=(0.9, 0.95), eps=1e-8)
+        optimizer.load_state_dict(optimizer_state_dict)
+        return self, optimizer

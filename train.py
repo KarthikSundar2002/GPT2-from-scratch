@@ -8,7 +8,7 @@ from config import GPTConfig
 from GPT2 import GPT
 from dataloader import DataLoader
 
-NUM_EPOCHS = 5
+NUM_EPOCHS = 100
 device = "cuda" if torch.cuda.is_available() else "cpu"
 print(f"Using device: {device}")
 
@@ -56,4 +56,6 @@ for epoch in range(NUM_EPOCHS):
         print(f"Epoch {epoch}, Step {i}: loss = {loss.item()}, norm = {norm}")
 torch.cuda.synchronize()
 end_time = time.time()
+torch.save(m.state_dict(), "/scratch/ks02450/model.pth")
+torch.save(optimizer.state_dict(), "/scratch/ks02450/optimizer.pth")
 print(f"Time to train: {end_time - start_time} seconds")
