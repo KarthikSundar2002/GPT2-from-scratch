@@ -13,6 +13,9 @@ class DataLoader:
 
         self.current_idx = 0
 
+    def __len__(self):
+        return len(self.data) // self.B // self.T
+    
     def __iter__(self):
         return self
 
