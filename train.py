@@ -27,8 +27,9 @@ dataloader = DataLoader(B=2, T=1024)
 start_time = time.time()
 for i in range(len(dataloader)):
     x, y = next(dataloader)
+    with torch.autocast(device_type=device, dtype=torch.bfloat16):
+         logits, loss = m(x.to(device), y.to(device))
     optimizer.zero_grad()
-    logits, loss = m(x.to(device), y.to(device))
     loss.backward()
     optimizer.step()
     print(f"Step {i}: loss = {loss.item()}")
