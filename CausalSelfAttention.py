@@ -25,10 +25,6 @@ class CausalSelfAttention(nn.Module):
         qkv = self.c_attn(x)
         q,k,v = einops.rearrange(qkv, "b t (a h d) -> a b h t d", a=3, h=self.n_head)
        
-
-        att = (q @ k.transpose(-2, -1)) * (1 / math.sqrt(C // self.n_head))
-        att = att.masked_fill(self.bias[:, :, :T, :T] == 0, float('-inf'))
-        att = F.softmax(att, dim=-1)
-        y = att @ v
+        y = F.scaled_dot_product_attention(q,k,v, is_causal=True)
         y = einops.rearrange(y, "b h t d -> b t (h d)")
         return self.c_proj(y)

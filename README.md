@@ -14,4 +14,5 @@ For 5 epochs,
 
 1. With torch.compile - Time to train: 81.19576597213745 seconds
 2. with torch.autocast to bfloat16 and float32 matmul precision to high - Time to train: 125.25839257240295 seconds
+3. With torch.compile and Flash Attention - Time to train: 69.03489518165588 seconds
 
