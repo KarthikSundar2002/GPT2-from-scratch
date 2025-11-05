@@ -4,6 +4,7 @@ from torch.nn import functional as F
 import tiktoken
 from config import GPTConfig
 from GPT2 import GPT
+from dataloader import DataLoader
 
 enc = tiktoken.get_encoding("gpt2")
 with open("input.txt", "r") as f:
@@ -21,6 +22,13 @@ print(f"Using device: {device}")
 model = GPT(GPTConfig())
 m = model.to(device).train()
 
-logits, loss = m(x.to(device), y.to(device))
+optimizer = torch.optim.AdamW(m.parameters(), lr=3e-4)
 
-print(loss.item())
+dataloader = DataLoader(B, T)
+for i in range(50):
+    x, y = next(dataloader)
+    optimizer.zero_grad()
+    logits, loss = m(x.to(device), y.to(device))
+    loss.backward()
+    optimizer.step()
+    print(f"Step {i}: loss = {loss.item()}")
