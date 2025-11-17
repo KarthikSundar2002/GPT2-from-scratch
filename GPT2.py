@@ -8,19 +8,19 @@ from MLP import MLP
 from config import GPTConfig
 from yarn import Yarn
 
+from CausalSelfAttention import norm
+
 class Block(nn.Module):
     def __init__(self, config: GPTConfig):
         super().__init__()
         self.config = config
 
-        self.ln1 = nn.LayerNorm(config.n_embd)
-        self.ln2 = nn.LayerNorm(config.n_embd)
         self.attn = CausalSelfAttention(config)
         self.mlp = MLP(config)
     
     def forward(self, x, cos, sin):
-        x = x + self.attn(self.ln1(x), cos, sin)
-        x = x + self.mlp(self.ln2(x))
+        x = x + self.attn(norm(x), cos, sin)
+        x = x + self.mlp(norm(x))
         return x
 
 

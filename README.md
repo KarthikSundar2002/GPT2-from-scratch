@@ -29,3 +29,6 @@ Now, Training for 5 Epochs, Time - 70.93886852264404 seconds. Avg Loss -  4.0638
 
 Added ReLU^2 Activation Instead of GeLU Activation
 Training for 5 Epochs, Time - 68.68175554275513 seconds. Avg Loss - 3.8532666105212585
+
+Switched from LayernNorm to RMSNorm, 5 Epochs Train
+Time -  67.5941743850708 seconds. Avg Loss - 3.8758670272249165
