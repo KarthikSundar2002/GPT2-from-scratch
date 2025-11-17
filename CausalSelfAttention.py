@@ -6,12 +6,18 @@ import einops
 import math
 
 from config import GPTConfig
+
+def norm(x):
+    return F.rms_norm(x, (x.size(-1),))
+
 class CausalSelfAttention(nn.Module):
     def __init__(self, config: GPTConfig):
         super().__init__()
         assert config.n_embd % config.n_head == 0
 
         self.c_attn = nn.Linear(config.n_embd, 3 * config.n_embd)
+
+     
         self.c_proj = nn.Linear(config.n_embd, config.n_embd)
         
         self.n_head = config.n_head
@@ -24,7 +30,7 @@ class CausalSelfAttention(nn.Module):
 
         qkv = self.c_attn(x)
         q,k,v = einops.rearrange(qkv, "b t (a h d) -> a b h t d", a=3, h=self.n_head)
-       
+        q, k = norm(q), norm(k)
         y = F.scaled_dot_product_attention(q,k,v, is_causal=True)
         y = einops.rearrange(y, "b h t d -> b t (h d)")
         return self.c_proj(y)

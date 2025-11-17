@@ -36,7 +36,7 @@ class GPT(nn.Module):
             ln_f = nn.LayerNorm(config.n_embd),
         ))
 
-        self.yarn = Yarn(config.n_embd/config.n_head, config.block_size, config.block_size)
+        # self.yarn = Yarn(config.n_embd/config.n_head, config.block_size, config.block_size) # TODO: Add yarn
         self.lm_head = nn.Linear(config.n_embd, config.vocab_size, bias=False)
 
         self.transformer.wte.weight = self.lm_head.weight
@@ -79,7 +79,7 @@ class GPT(nn.Module):
             {"params": [p for p in decay_params], "weight_decay": weight_decay},
             {"params": [p for p in nodecay_params], "weight_decay": 0.0}
         ]
-        optimizer = torch.optim.AdamW(optim_groups, lr=learning_rate, betas=betas, eps=eps, fused=False)
+        optimizer = torch.optim.AdamW(optim_groups, lr=learning_rate, betas=betas, eps=eps, fused=True)
         return optimizer
     
     def load_state_dict(self, state_dict, optimizer_state_dict):

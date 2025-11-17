@@ -57,8 +57,11 @@ for epoch in range(NUM_EPOCHS):
         avg_loss += loss.item()
         if i % 100 == 0:
             print(f"Epoch {epoch}, Step {i}: loss = {loss.item()}, norm = {norm}")
+    avg_loss /= len(dataloader)
+    print(f"Epoch {epoch}: average loss = {avg_loss}")
+    avg_loss = 0
 torch.cuda.synchronize()
 end_time = time.time()
 torch.save(m.state_dict(), "/scratch/ks02450/model.pth")
 torch.save(optimizer.state_dict(), "/scratch/ks02450/optimizer.pth")
-print(f"Time to train: {end_time - start_time} seconds. Average loss: {avg_loss / (NUM_EPOCHS * len(dataloader))}")
+print(f"Time to train: {end_time - start_time} seconds.")

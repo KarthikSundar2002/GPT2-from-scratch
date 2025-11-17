@@ -20,4 +20,6 @@ For 5 epochs,
 
 After Adding LR Schedulers, Weight Decay and Gradient Norm Clipping, Training for 5 epochs
 1. Without Fused AdamW - Time to train: 62.56659150123596 seconds
-2. With Fused AdamW - Time to train: 57.591166973114014 seconds
+2. With Fused AdamW - Time to train: 57.591166973114014 seconds, Avg Loss - 5.64244685606523
+
+Added QK-norm, Training for 5 Epochs, Time - 69.68068528175354 seconds. Avg loss - 5.588010857321999
