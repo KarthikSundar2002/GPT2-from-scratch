@@ -26,3 +26,6 @@ Added QK-norm, Training for 5 Epochs, Time - 69.68068528175354 seconds. Avg loss
 
 Then Added RoPE Embeddings (YaRN is available, but as of now the seq length is fixed),
 Now, Training for 5 Epochs, Time - 70.93886852264404 seconds. Avg Loss -  4.063881944887566
+
+Added ReLU^2 Activation Instead of GeLU Activation
+Training for 5 Epochs, Time - 68.68175554275513 seconds. Avg Loss - 3.8532666105212585
