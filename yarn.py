@@ -38,4 +38,3 @@ class Yarn(nn.Module):
         self.sin.copy_(theta.sin())
         self.attn_scale *= 0.2 * math.log(new_window/old_window) + 1
 
-
