@@ -36,6 +36,7 @@ class GPT(nn.Module):
             ln_f = nn.LayerNorm(config.n_embd),
         ))
 
+        self.yarn = Yarn(config.n_embd/config.n_head, config.block_size, config.block_size)
         self.lm_head = nn.Linear(config.n_embd, config.vocab_size, bias=False)
 
         self.transformer.wte.weight = self.lm_head.weight

@@ -8,7 +8,7 @@ from config import GPTConfig
 from GPT2 import GPT
 from dataloader import DataLoader
 
-NUM_EPOCHS = 100
+NUM_EPOCHS = 5
 device = "cuda" if torch.cuda.is_available() else "cpu"
 print(f"Using device: {device}")
 
@@ -41,6 +41,7 @@ optimizer = m.configure_optimizers(weight_decay=0.1, learning_rate=max_lr, betas
 
 dataloader = DataLoader(B=2, T=1024)
 start_time = time.time()
+avg_loss = 0
 for epoch in range(NUM_EPOCHS):
     for i in range(len(dataloader)):
         x, y = next(dataloader)
@@ -53,9 +54,11 @@ for epoch in range(NUM_EPOCHS):
         for param_group in optimizer.param_groups:
             param_group['lr'] = lr
         optimizer.step()
-        print(f"Epoch {epoch}, Step {i}: loss = {loss.item()}, norm = {norm}")
+        avg_loss += loss.item()
+        if i % 100 == 0:
+            print(f"Epoch {epoch}, Step {i}: loss = {loss.item()}, norm = {norm}")
 torch.cuda.synchronize()
 end_time = time.time()
 torch.save(m.state_dict(), "/scratch/ks02450/model.pth")
 torch.save(optimizer.state_dict(), "/scratch/ks02450/optimizer.pth")
-print(f"Time to train: {end_time - start_time} seconds")
+print(f"Time to train: {end_time - start_time} seconds. Average loss: {avg_loss / (NUM_EPOCHS * len(dataloader))}")

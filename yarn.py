@@ -38,3 +38,15 @@ class Yarn(nn.Module):
         self.sin.copy_(theta.sin())
         self.attn_scale *= 0.2 * math.log(new_window/old_window) + 1
 
+def rotary(x, cos, sin):
+    assert cos.size(0) >= x.size(-3)
+    
+    cos, sin = (
+        cos[None,:x.size(-3),None,:],
+        sin[None,:x.size(-3),None,:]
+    )
+    x1,x2 = x.chunk(2, dim=-1)
+    y1 = x1 * cos + x2 * sin
+    y2 = x1 * (-sin) + x2 * cos
+    return torch.cat([y1, y2], dim=-1)
+
