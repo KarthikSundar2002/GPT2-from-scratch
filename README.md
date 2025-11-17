@@ -23,3 +23,6 @@ After Adding LR Schedulers, Weight Decay and Gradient Norm Clipping, Training fo
 2. With Fused AdamW - Time to train: 57.591166973114014 seconds, Avg Loss - 5.64244685606523
 
 Added QK-norm, Training for 5 Epochs, Time - 69.68068528175354 seconds. Avg loss - 5.588010857321999
+
+Then Added RoPE Embeddings (YaRN is available, but as of now the seq length is fixed),
+Now, Training for 5 Epochs, Time - 70.93886852264404 seconds. Avg Loss -  4.063881944887566

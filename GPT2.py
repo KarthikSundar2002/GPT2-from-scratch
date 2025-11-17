@@ -6,6 +6,8 @@ from torch.nn import functional as F
 from CausalSelfAttention import CausalSelfAttention
 from MLP import MLP
 from config import GPTConfig
+from yarn import Yarn
+
 class Block(nn.Module):
     def __init__(self, config: GPTConfig):
         super().__init__()
@@ -16,8 +18,8 @@ class Block(nn.Module):
         self.attn = CausalSelfAttention(config)
         self.mlp = MLP(config)
     
-    def forward(self, x):
-        x = x + self.attn(self.ln1(x))
+    def forward(self, x, cos, sin):
+        x = x + self.attn(self.ln1(x), cos, sin)
         x = x + self.mlp(self.ln2(x))
         return x
 
@@ -31,12 +33,12 @@ class GPT(nn.Module):
         self.config = config
         self.transformer = nn.ModuleDict(dict(
             wte = nn.Embedding(config.vocab_size, config.n_embd), # word embedding table,
-            wpe = nn.Embedding(config.block_size, config.n_embd), # position embedding,
+           # wpe = nn.Embedding(config.block_size, config.n_embd), # position embedding,
             h = nn.ModuleList([Block(config) for _ in range(config.n_layer)]),
             ln_f = nn.LayerNorm(config.n_embd),
         ))
 
-        # self.yarn = Yarn(config.n_embd/config.n_head, config.block_size, config.block_size) # TODO: Add yarn
+        self.yarn = Yarn(config.head_dim, config.block_size, config.block_size)
         self.lm_head = nn.Linear(config.n_embd, config.vocab_size, bias=False)
 
         self.transformer.wte.weight = self.lm_head.weight
@@ -57,11 +59,11 @@ class GPT(nn.Module):
 
         pos = torch.arange(0, T, dtype=torch.long, device=idx.device)
         tok_emb = self.transformer.wte(idx)
-        pos_emb = self.transformer.wpe(pos)
-        x = tok_emb + pos_emb
-
+       # pos_emb = self.transformer.wpe(pos)
+        x = tok_emb
+        cos, sin = self.yarn.cos, self.yarn.sin
         for block in self.transformer.h:
-            x = block(x)
+            x = block(x, cos, sin)
 
         x = self.transformer.ln_f(x)
         logits = self.lm_head(x)
