@@ -32,3 +32,6 @@ Training for 5 Epochs, Time - 68.68175554275513 seconds. Avg Loss - 3.8532666105
 
 Switched from LayernNorm to RMSNorm, 5 Epochs Train
 Time -  67.5941743850708 seconds. Avg Loss - 3.8758670272249165
+
+Zero Initialization of the projection layers of the attention module and zero initialization of the second layer of MLP, 5 Epochs Train
+Time -  59.57936501502991 seconds.. Avg Loss - 3.6762325648105505

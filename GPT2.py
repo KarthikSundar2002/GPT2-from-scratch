@@ -47,7 +47,7 @@ class GPT(nn.Module):
             if isinstance(module, nn.Linear):
                 std = 0.02
                 if "c_proj" in name:
-                    std *= (2 * config.n_layer)**-0.5
+                   continue
                 torch.nn.init.normal_(module.weight, mean=0.0, std=std)
                 if module.bias is not None:
                     torch.nn.init.zeros_(module.bias)

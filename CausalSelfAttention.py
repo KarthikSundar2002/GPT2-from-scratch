@@ -24,6 +24,9 @@ class CausalSelfAttention(nn.Module):
         self.n_embd = config.n_embd
         
         self.register_buffer("bias", torch.tril(torch.ones(config.block_size, config.block_size)).view(1, 1, config.block_size, config.block_size)) # Causal Mask
+        with torch.no_grad():
+            self.c_proj.weight.data.zero_()
+            self.c_proj.bias.data.zero_()
 
     def forward(self, x, cos, sin):
         B, T, C = x.size()
