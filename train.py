@@ -42,6 +42,7 @@ optimizer = m.configure_optimizers(weight_decay=0.1, learning_rate=max_lr, betas
 dataloader = DataLoader(B=2, T=1024)
 start_time = time.time()
 avg_loss = 0
+
 for epoch in range(NUM_EPOCHS):
     for i in range(len(dataloader)):
         x, y = next(dataloader)

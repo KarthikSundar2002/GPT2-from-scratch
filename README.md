@@ -35,3 +35,10 @@ Time -  67.5941743850708 seconds. Avg Loss - 3.8758670272249165
 
 Zero Initialization of the projection layers of the attention module and zero initialization of the second layer of MLP, 5 Epochs Train
 Time -  59.57936501502991 seconds.. Avg Loss - 3.6762325648105505
+
+Untied The Embedding Weight and the LM Head: 5 Epochs Train
+Time -  72.79475784301758 seconds.. Avg Loss - 3.337182854161118
+
+Adds Skip Connection from every block to the first block and averages their output.
+Time -  65.08958983421326 seconds. Avg Loss - 3.5915792017272024
+Not much difference, even when I make the weighting between them adaptive.

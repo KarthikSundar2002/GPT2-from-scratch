@@ -11,14 +11,19 @@ from yarn import Yarn
 from CausalSelfAttention import norm
 
 class Block(nn.Module):
-    def __init__(self, config: GPTConfig):
+    def __init__(self, block_idx ,config: GPTConfig):
         super().__init__()
         self.config = config
-
+        self.block_idx = block_idx
+        if self.block_idx != 0:
+            self.skip_weight = nn.Parameter(torch.ones(1) * 0.5)
         self.attn = CausalSelfAttention(config)
         self.mlp = MLP(config)
+
     
-    def forward(self, x, cos, sin):
+    def forward(self, x, cos, sin, first_block_out=None):
+        if self.block_idx != 0 and first_block_out is not None:
+            x = self.skip_weight * x + (1 - self.skip_weight) * first_block_out
         x = x + self.attn(norm(x), cos, sin)
         x = x + self.mlp(norm(x))
         return x
@@ -34,14 +39,14 @@ class GPT(nn.Module):
         self.transformer = nn.ModuleDict(dict(
             wte = nn.Embedding(config.vocab_size, config.n_embd), # word embedding table,
            # wpe = nn.Embedding(config.block_size, config.n_embd), # position embedding,
-            h = nn.ModuleList([Block(config) for _ in range(config.n_layer)]),
+            h = nn.ModuleList([Block(block_idx, config) for block_idx in range(config.n_layer)]),
             ln_f = nn.LayerNorm(config.n_embd),
         ))
 
         self.yarn = Yarn(config.head_dim, config.block_size, config.block_size)
         self.lm_head = nn.Linear(config.n_embd, config.vocab_size, bias=False)
 
-        self.transformer.wte.weight = self.lm_head.weight
+       # self.transformer.wte.weight = self.lm_head.weight
 
         for name, module in self.transformer.named_modules():
             if isinstance(module, nn.Linear):
@@ -62,8 +67,15 @@ class GPT(nn.Module):
        # pos_emb = self.transformer.wpe(pos)
         x = tok_emb
         cos, sin = self.yarn.cos, self.yarn.sin
-        for block in self.transformer.h:
-            x = block(x, cos, sin)
+        
+        first_block_out = None
+        for block_idx, block in enumerate(self.transformer.h):
+            if block_idx == 0:
+                x = block(x, cos, sin)
+                first_block_out = x
+            else:
+                assert first_block_out is not None
+                x = block(x, cos, sin, first_block_out)
 
         x = self.transformer.ln_f(x)
         logits = self.lm_head(x)
