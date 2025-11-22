@@ -6,7 +6,7 @@ class DataLoader:
         self.B = B
         self.T = T
         
-        with open("input.txt", "r") as f:
+        with open("combined.txt", "r") as f:
             text = f.read()
         self.tokens = tiktoken.get_encoding("gpt2").encode(text)
         self.data = torch.tensor(self.tokens)

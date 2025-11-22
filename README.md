@@ -42,3 +42,8 @@ Time -  72.79475784301758 seconds.. Avg Loss - 3.337182854161118
 Adds Skip Connection from every block to the first block and averages their output.
 Time -  65.08958983421326 seconds. Avg Loss - 3.5915792017272024
 Not much difference, even when I make the weighting between them adaptive.
+
+Changing to a new Dataset - OpenWebText-10K
+Everything till now except the skip connections from the first block -  1 Epochs
+Time - 285.06610012054443 seconds.. Avg Loss -  5.971239207874645
+

@@ -5,10 +5,10 @@ import time
 import math
 
 from config import GPTConfig
-from GPT2 import GPT
+from GPT2 import GPT, Muon
 from dataloader import DataLoader
 
-NUM_EPOCHS = 5
+NUM_EPOCHS = 1
 device = "cuda" if torch.cuda.is_available() else "cpu"
 print(f"Using device: {device}")
 
@@ -37,9 +37,9 @@ def get_lr(step):
     coeff = 0.5 * (1.0 + math.cos(math.pi * decay_ratio))
     return min_lr + coeff * (max_lr - min_lr)
 
-optimizer = m.configure_optimizers(weight_decay=0.1, learning_rate=max_lr, betas=(0.9, 0.95), eps=1e-8)
+optimizers = m.configure_optimizers(weight_decay=0.1, learning_rate=max_lr, betas=(0.9, 0.95), eps=1e-8)
 
-dataloader = DataLoader(B=2, T=1024)
+dataloader = DataLoader(B=8, T=1024)
 start_time = time.time()
 avg_loss = 0
 
@@ -48,13 +48,20 @@ for epoch in range(NUM_EPOCHS):
         x, y = next(dataloader)
         with torch.autocast(device_type=device, dtype=torch.bfloat16):
             logits, loss = m(x.to(device), y.to(device))
-        optimizer.zero_grad()
+        for optimizer in optimizers:
+            optimizer.zero_grad()
         loss.backward()
         norm = torch.nn.utils.clip_grad_norm_(m.parameters(), 1.0)
         lr = get_lr(i + epoch * len(dataloader))
-        for param_group in optimizer.param_groups:
-            param_group['lr'] = lr
-        optimizer.step()
+        for optimizer in optimizers:
+            if isinstance(optimizer, Muon):
+                for param_group in optimizer.param_groups:
+                    param_group['lr'] = 0.1*lr
+                optimizer.step()
+            else:
+                for param_group in optimizer.param_groups:
+                    param_group['lr'] = lr
+            optimizer.step()
         avg_loss += loss.item()
         if i % 100 == 0:
             print(f"Epoch {epoch}, Step {i}: loss = {loss.item()}, norm = {norm}")
