@@ -47,3 +47,11 @@ Changing to a new Dataset - OpenWebText-10K
 Everything till now except the skip connections from the first block -  1 Epochs
 Time - 285.06610012054443 seconds.. Avg Loss -  5.971239207874645
 
+With Muon Optimizer, Linear Weights Casted to Bfloat16,
+Epoch 0, Step 900: loss = 5.505822658538818, norm = 0.7672624588012695, time = 246.73382449150085 seconds
+Epoch 0, Step 1200: loss = 5.30943489074707, norm = 0.6942930221557617, time = 326.76921463012695 seconds
+
+Added UNet Style Skip Connections,
+Epoch 0, Step 900: loss = 5.506043910980225, norm = 0.7674642205238342, time = 242.98071599006653 seconds
+Epoch 0, Step 1200: loss = 5.309330940246582, norm = 0.6946200728416443, time = 323.3906297683716 seconds
+

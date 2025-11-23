@@ -7,6 +7,11 @@ import math
 
 from config import GPTConfig
 from yarn import rotary
+from MLP import CastedLinear
+
+
+
+
 def norm(x):
     return F.rms_norm(x, (x.size(-1),))
 
@@ -15,10 +20,10 @@ class CausalSelfAttention(nn.Module):
         super().__init__()
         assert config.n_embd % config.n_head == 0
 
-        self.c_attn = nn.Linear(config.n_embd, 3 * config.n_embd)
+        self.c_attn = CastedLinear(config.n_embd, 3 * config.n_embd)
 
      
-        self.c_proj = nn.Linear(config.n_embd, config.n_embd)
+        self.c_proj = CastedLinear(config.n_embd, config.n_embd)
         
         self.n_head = config.n_head
         self.n_embd = config.n_embd

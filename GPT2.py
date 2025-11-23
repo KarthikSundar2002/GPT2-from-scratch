@@ -4,7 +4,7 @@ import torch.nn as nn
 from torch.nn import functional as F
 
 from CausalSelfAttention import CausalSelfAttention
-from MLP import MLP
+from MLP import MLP, CastedLinear
 from config import GPTConfig
 from yarn import Yarn
 
@@ -94,16 +94,16 @@ class Block(nn.Module):
     def __init__(self, block_idx ,config: GPTConfig):
         super().__init__()
         self.config = config
-        self.block_idx = block_idx
-        if self.block_idx != 0:
-            self.skip_weight = nn.Parameter(torch.ones(1) * 0.5)
+        self.block_idx = block_idx 
         self.attn = CausalSelfAttention(config)
         self.mlp = MLP(config)
 
     
-    def forward(self, x, cos, sin, first_block_out=None):
+    def forward(self, x, cos, sin, skip_out=None,skip_weight=None,first_weight=None,first_block_out=None):
         if self.block_idx != 0 and first_block_out is not None:
-            x = self.skip_weight * x + (1 - self.skip_weight) * first_block_out
+            x = first_weight * x + (1 - first_weight) * first_block_out
+        if skip_out is not None:
+            x = skip_weight[0] * x + skip_weight[1] * skip_out
         x = x + self.attn(norm(x), cos, sin)
         x = x + self.mlp(norm(x))
         return x
@@ -114,20 +114,24 @@ class Block(nn.Module):
 class GPT(nn.Module):
     def __init__(self, config: GPTConfig):
         super().__init__()
-        
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.config = config
         self.transformer = nn.ModuleDict(dict(
             wte = nn.Embedding(config.vocab_size, config.n_embd), # word embedding table,
+#            vte = nn.Embedding(config.vocab_size, config.n_embd*config.n_layer), # value embedding table,
            # wpe = nn.Embedding(config.block_size, config.n_embd), # position embedding,
             h = nn.ModuleList([Block(block_idx, config) for block_idx in range(config.n_layer)]),
             ln_f = nn.LayerNorm(config.n_embd),
         ))
 
         self.yarn = Yarn(config.head_dim, config.block_size, config.block_size)
-        self.lm_head = nn.Linear(config.n_embd, config.vocab_size, bias=False)
+        self.lm_head = CastedLinear(config.n_embd, config.vocab_size, bias=False)
 
        # self.transformer.wte.weight = self.lm_head.weight
-
+        self.scalars = [
+            [nn.Parameter(torch.tensor([1.0, 0.0])).to(device) for _ in range((config.n_layer // 2) - 1)],
+            [nn.Parameter(torch.ones(1) * 0.5).to(device) for _ in range(config.n_layer - 1)],
+        ]
         for name, module in self.transformer.named_modules():
             if isinstance(module, nn.Linear):
                 std = 0.02
@@ -147,18 +151,25 @@ class GPT(nn.Module):
        # pos_emb = self.transformer.wpe(pos)
         x = tok_emb
         cos, sin = self.yarn.cos, self.yarn.sin
-        
+        num_blocks = len(self.transformer.h)
+        n = num_blocks // 2
         first_block_out = None
+        skip_outs = []
         for block_idx, block in enumerate(self.transformer.h):
             if block_idx == 0:
                 x = block(x, cos, sin)
                 first_block_out = x
             else:
                 assert first_block_out is not None
-                x = block(x, cos, sin, first_block_out)
-        for block in self.transformer.h:
-            x = block(x, cos, sin)
-
+                if block_idx < n:
+                    x = block(x, cos, sin, first_weight=self.scalars[1][block_idx - 1], first_block_out=first_block_out)
+                    skip_outs.append(x)
+                else:
+                    if block_idx == self.config.n_layer - 1:
+                        x = block(x, cos, sin, first_weight=self.scalars[1][block_idx - 1], first_block_out=first_block_out)
+                    else:
+                        x = block(x, cos, sin, skip_out=skip_outs.pop(), skip_weight=self.scalars[0][block_idx - n - 1], first_weight=self.scalars[1][block_idx - n - 1], first_block_out=first_block_out)
+   
         x = self.transformer.ln_f(x)
         logits = self.lm_head(x)
         logits = 30 * torch.sigmoid(logits/7.5)

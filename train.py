@@ -55,16 +55,15 @@ for epoch in range(NUM_EPOCHS):
         lr = get_lr(i + epoch * len(dataloader))
         for optimizer in optimizers:
             if isinstance(optimizer, Muon):
-                for param_group in optimizer.param_groups:
-                    param_group['lr'] = 0.1*lr
                 optimizer.step()
             else:
                 for param_group in optimizer.param_groups:
                     param_group['lr'] = lr
-            optimizer.step()
+                optimizer.step()
         avg_loss += loss.item()
         if i % 100 == 0:
-            print(f"Epoch {epoch}, Step {i}: loss = {loss.item()}, norm = {norm}")
+            step_time = time.time()
+            print(f"Epoch {epoch}, Step {i}: loss = {loss.item()}, norm = {norm}, time = {step_time - start_time} seconds")
     avg_loss /= len(dataloader)
     print(f"Epoch {epoch}: average loss = {avg_loss}")
     avg_loss = 0
