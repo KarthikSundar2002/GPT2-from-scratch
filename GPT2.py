@@ -8,6 +8,10 @@ from MLP import MLP, CastedLinear
 from config import GPTConfig
 from yarn import Yarn
 
+from torch.nn.attention.flex_attention import create_block_mask
+
+create_block_mask = torch.compile(create_block_mask, dynamic=False)
+
 from CausalSelfAttention import norm
 
 @torch.compile
@@ -99,12 +103,12 @@ class Block(nn.Module):
         self.mlp = MLP(config)
 
     
-    def forward(self, x, cos, sin, skip_out=None,skip_weight=None,first_weight=None,first_block_out=None):
+    def forward(self, x, cos, sin, block_mask, skip_out=None,skip_weight=None,first_weight=None,first_block_out=None):
         if self.block_idx != 0 and first_block_out is not None:
             x = first_weight * x + (1 - first_weight) * first_block_out
         if skip_out is not None:
             x = skip_weight[0] * x + skip_weight[1] * skip_out
-        x = x + self.attn(norm(x), cos, sin)
+        x = x + self.attn(norm(x), cos, sin, block_mask)
         x = x + self.mlp(norm(x))
         return x
 
@@ -146,6 +150,18 @@ class GPT(nn.Module):
 
         assert T <= self.config.block_size, f"Cannot forward sequence of length {T}, block size is only {self.config.block_size}"
 
+
+        docs = (idx == 50256).cumsum(0)
+        def document_causal_mask(b, h, q_idx, kv_idx):
+          causal_mask = q_idx >= kv_idx
+          document_mask = docs[q_idx] == docs[kv_idx]
+          window_mask = q_idx - kv_idx < 1024
+          return causal_mask & document_mask & window_mask
+
+        S = len(idx)
+        block_mask = create_block_mask(document_causal_mask, None, None, S, S, device="cuda", _compile=True)
+        
+
         pos = torch.arange(0, T, dtype=torch.long, device=idx.device)
         tok_emb = self.transformer.wte(idx)
        # pos_emb = self.transformer.wpe(pos)
@@ -157,18 +173,18 @@ class GPT(nn.Module):
         skip_outs = []
         for block_idx, block in enumerate(self.transformer.h):
             if block_idx == 0:
-                x = block(x, cos, sin)
+                x = block(x, cos, sin, block_mask)
                 first_block_out = x
             else:
                 assert first_block_out is not None
                 if block_idx < n:
-                    x = block(x, cos, sin, first_weight=self.scalars[1][block_idx - 1], first_block_out=first_block_out)
+                    x = block(x, cos, sin, block_mask, first_weight=self.scalars[1][block_idx - 1], first_block_out=first_block_out)
                     skip_outs.append(x)
                 else:
                     if block_idx == self.config.n_layer - 1:
-                        x = block(x, cos, sin, first_weight=self.scalars[1][block_idx - 1], first_block_out=first_block_out)
+                        x = block(x, cos, sin, block_mask, first_weight=self.scalars[1][block_idx - 1], first_block_out=first_block_out)
                     else:
-                        x = block(x, cos, sin, skip_out=skip_outs.pop(), skip_weight=self.scalars[0][block_idx - n - 1], first_weight=self.scalars[1][block_idx - n - 1], first_block_out=first_block_out)
+                        x = block(x, cos, sin, block_mask, skip_out=skip_outs.pop(), skip_weight=self.scalars[0][block_idx - n - 1], first_weight=self.scalars[1][block_idx - n - 1], first_block_out=first_block_out)
    
         x = self.transformer.ln_f(x)
         logits = self.lm_head(x)
@@ -199,5 +215,6 @@ class GPT(nn.Module):
         for key in cur_state_dict.keys():
                 cur_state_dict[key].data.copy_(state_dict['_orig_mod.'+key].data)
         optimizer = self.configure_optimizers(weight_decay=0.1, learning_rate=6e-4, betas=(0.9, 0.95), eps=1e-8)
-        optimizer.load_state_dict(optimizer_state_dict)
+        optimizer[0].load_state_dict(optimizer_state_dict[0])
+        optimizer[1].load_state_dict(optimizer_state_dict[1])
         return self, optimizer

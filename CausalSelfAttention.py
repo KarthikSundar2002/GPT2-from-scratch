@@ -9,7 +9,8 @@ from config import GPTConfig
 from yarn import rotary
 from MLP import CastedLinear
 
-
+from torch.nn.attention.flex_attention import flex_attention
+flex_attention = torch.compile(flex_attention, dynamic=False)
 
 
 def norm(x):
@@ -33,7 +34,7 @@ class CausalSelfAttention(nn.Module):
             self.c_proj.weight.data.zero_()
             self.c_proj.bias.data.zero_()
 
-    def forward(self, x, cos, sin):
+    def forward(self, x, cos, sin, block_mask):
         B, T, C = x.size()
 
         qkv = self.c_attn(x)
@@ -44,6 +45,6 @@ class CausalSelfAttention(nn.Module):
         q = einops.rearrange(q, "b t h d -> b h t d")
         k = einops.rearrange(k, "b t h d -> b h t d")
         v = einops.rearrange(v, "b t h d -> b h t d")
-        y = F.scaled_dot_product_attention(q,k,v, is_causal=True)
+        y = flex_attention(q,k,v, block_mask=block_mask)
         y = einops.rearrange(y, "b h t d -> b t (h d)")
         return self.c_proj(y)
